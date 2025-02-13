@@ -59,7 +59,6 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f := removeProfanity(chirp.Body)
-	//fmt.Println(f)
 	chirp.CleanedBody = f
 
 	jsonData, err := json.Marshal(chirp)
