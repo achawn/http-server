@@ -4,7 +4,6 @@ import "net/http"
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		//w.Write([]byte(http.StatusText(http.StatusMethodNotAllowed)))
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
