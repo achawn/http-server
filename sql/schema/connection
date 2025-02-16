@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+export CONN="postgres://andrewhawn:@localhost:5432/chirpy"
