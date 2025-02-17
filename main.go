@@ -4,6 +4,11 @@ import "net/http"
 import "sync/atomic"
 import "fmt"
 import "encoding/json"
+import _ "github.com/lib/pq"
+import "github.com/joho/godotenv"
+import "os"
+import "database/sql"
+import "internal/database"
 
 type params struct {
 	Body string `json:"body"`
@@ -12,6 +17,7 @@ type params struct {
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	Db *database.Queries
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -75,15 +81,24 @@ func (cfg *apiConfig) handlerValidate(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		fmt.Errorf("Error opening db: %w", err)
+	}
+	dbQueries := database.New(db)
 	mux := http.NewServeMux()
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
+		Db: dbQueries,
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/api/healthz", handlerReadiness)
 	mux.HandleFunc("/admin/metrics", apiCfg.handlerMertrics)
 	mux.HandleFunc("/api/validate_chirp", apiCfg.handlerValidate)
 	mux.HandleFunc("/admin/reset", apiCfg.handlerReset)
+	mux.HandleFunc("/api/users", apiCfg.handlerUsers)
 	server := http.Server{
 		Addr: ":8080",
 		Handler: mux,
