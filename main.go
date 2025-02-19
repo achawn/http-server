@@ -99,6 +99,8 @@ func main() {
 	mux.HandleFunc("/api/validate_chirp", apiCfg.handlerValidate)
 	mux.HandleFunc("/admin/reset", apiCfg.handlerReset)
 	mux.HandleFunc("/api/users", apiCfg.handlerUsers)
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	server := http.Server{
 		Addr: ":8080",
 		Handler: mux,
