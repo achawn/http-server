@@ -6,6 +6,8 @@ import "net/http"
 import "time"
 import "github.com/google/uuid"
 import "fmt"
+import "internal/auth"
+import "internal/database"
 
 type User struct {
 	ID uuid.UUID `json:"id"`
@@ -14,10 +16,12 @@ type User struct {
 	Email string `json:"email"`
 }
 
+type userParams struct {
+	Email string `json:"email"`
+	Password string `json:"password"`
+}
+
 func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
-	type userParams struct {
-		Email string `json:"email"`
-	}
 	type response struct {
 		User
 	}
@@ -27,9 +31,19 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 500, "Error decoding user")
+		return
 	}
 
-	user, err := cfg.Db.CreateUser(context.Background(), params.Email)
+	hashed, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, 400, "Error hashing password")
+		return
+	}
+
+	user, err := cfg.Db.CreateUser(context.Background(), database.CreateUserParams{
+		Email: params.Email,
+		HashedPassword: hashed,
+	})
 	if err != nil {
 		fmt.Println(err)
 		respondWithError(w, 500, "Error creating user")
