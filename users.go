@@ -14,11 +14,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email string `json:"email"`
+	Token string `json:"token"`
 }
 
 type userParams struct {
 	Email string `json:"email"`
 	Password string `json:"password"`
+	Expires *int `json:"expires_in_seconds,omitempty"`
 }
 
 func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {

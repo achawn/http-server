@@ -6,6 +6,7 @@ import "time"
 import "net/http"
 import "context"
 import "internal/database"
+import "internal/auth"
 
 type Chirp struct {
 	ID uuid.UUID `json:"id"`
@@ -21,13 +22,25 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	tk, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 400, "Error getting token")
+		return
+	}
+
+	user_id, err := auth.ValidateJWT(tk, cfg.Secret)
+	if err != nil {
+		respondWithError(w, 400, "Token not valid")
+		return
+	}
+
 	type chirpParams struct {
 		Body string `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		//UserID uuid.UUID `json:"user_id"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	params := chirpParams{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 500, "Error decoding chirp")
 	}
@@ -46,7 +59,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Body: params.Body,
-		UserID: params.UserID,
+		UserID: user_id,
 	})
 	if err != nil {
 		respondWithError(w, 500, "Error creating chirp")
