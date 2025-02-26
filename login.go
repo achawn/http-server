@@ -6,6 +6,7 @@ import "internal/auth"
 import "net/http"
 import "context"
 import "time"
+import "internal/database"
 
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -34,17 +35,25 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiration := 3600
-	if params.Expires != nil {
-		if *params.Expires > 3600 {
-			expiration = 3600
-		} else if *params.Expires > 0 {
-			expiration = *params.Expires
-		}
-	}
-	tk, err := auth.MakeJWT(user.ID, cfg.Secret, time.Duration(expiration) * time.Second)
+	tk, err := auth.MakeJWT(user.ID, cfg.Secret, time.Hour)
 	if err != nil {
 		respondWithError(w, 500, "Error making jwt")
+		return
+	}
+
+	rtk, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, 500, "Error creating token")
+		return
+
+	}
+	_, err = cfg.Db.CreateRefreshToken(context.Background(), database.CreateRefreshTokenParams{
+		Token: rtk,
+		UserID: user.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60),
+	})
+	if err != nil {
+		respondWithError(w, 500, "Error saving token")
 		return
 	}
 
@@ -54,6 +63,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
 		Token: tk,
+		RefreshToken: rtk,
 	})
 
 

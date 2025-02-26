@@ -7,6 +7,8 @@ import "github.com/golang-jwt/jwt/v5"
 import "fmt"
 import "strings"
 import "net/http"
+import "crypto/rand"
+import "encoding/hex"
 
 func HashPassword(password string) (string, error) {
 	pw, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -85,4 +87,14 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 	return trimmed, nil
 
+}
+
+func MakeRefreshToken() (string, error) {
+	bit := make([]byte, 32)
+	_, err := rand.Read(bit)
+	if err != nil {
+		return "", err
+	} 
+	encoded := hex.EncodeToString(bit)
+	return encoded, nil
 }

@@ -30,7 +30,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 	user_id, err := auth.ValidateJWT(tk, cfg.Secret)
 	if err != nil {
-		respondWithError(w, 400, "Token not valid")
+		respondWithError(w, 401, "Token not valid")
 		return
 	}
 
