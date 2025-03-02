@@ -61,3 +61,56 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 }
+
+func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request) {
+	tokenStr, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Token missing or broken")
+		return
+	}
+
+	user_id, err := auth.ValidateJWT(tokenStr, cfg.Secret)
+	if err != nil {
+		respondWithError(w, 401, "Token not valid")
+		return
+	}
+
+	// user, err := cfg.Db.GetUserFromToken(r.Context(), tokenStr)
+	// if err != nil {
+	// 	respondWithError(w, 401, "User not found from token")
+	// 	return
+	// }
+
+
+	decoder := json.NewDecoder(r.Body)
+	params := userParams{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, 500, "Error decoding user")
+		return
+	}
+
+	hashed, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, 400, "Error hashing password")
+		return
+	}
+
+	updated, err := cfg.Db.UpdateUser(context.Background(), database.UpdateUserParams{
+		ID: user_id,
+		Email: params.Email,
+		HashedPassword: hashed,
+	})
+	if err != nil {
+		respondWithError(w, 500, "Unable to update user")
+		return
+	}
+
+	respondWithJson(w, http.StatusOK, User{
+		ID: updated.ID,
+		CreatedAt: updated.CreatedAt,
+		UpdatedAt: updated.UpdatedAt,
+		Email: updated.Email,
+	})
+
+}
