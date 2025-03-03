@@ -45,7 +45,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 }
 
 const getUserFromToken = `-- name: GetUserFromToken :one
-SELECT u.id, u.created_at, u.updated_at, u.email, u.hashed_password FROM refresh_tokens rt
+SELECT u.id, u.created_at, u.updated_at, u.email, u.hashed_password, u.is_chirpy_red FROM refresh_tokens rt
 INNER JOIN users u ON
 rt.user_id = u.id
 WHERE token = $1
@@ -62,6 +62,7 @@ func (q *Queries) GetUserFromToken(ctx context.Context, token string) (User, err
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
