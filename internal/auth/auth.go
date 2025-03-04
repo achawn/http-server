@@ -98,3 +98,24 @@ func MakeRefreshToken() (string, error) {
 	encoded := hex.EncodeToString(bit)
 	return encoded, nil
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	key_string := headers.Get("Authorization")
+	if key_string == "" {
+		return "", fmt.Errorf("no key found")
+	}
+
+	prefix := "ApiKey "
+
+	if !strings.HasPrefix(key_string, prefix) {
+		return "", fmt.Errorf("malformed key")
+
+	}
+
+	trimmed := strings.TrimPrefix(key_string, prefix)
+	if trimmed == "" {
+		return "", fmt.Errorf("empty key")
+	}
+
+	return trimmed, nil
+}

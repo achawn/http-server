@@ -19,6 +19,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	Db *database.Queries
 	Secret string
+	Polka string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -85,6 +86,7 @@ func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	secret := os.Getenv("JWT_SECRET")
+	polka := os.Getenv("POLKA_KEY")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Errorf("Error opening db: %w", err)
@@ -95,6 +97,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		Db: dbQueries,
 		Secret: secret,
+		Polka: polka,
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/api/healthz", handlerReadiness)

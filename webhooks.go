@@ -4,6 +4,7 @@ import "context"
 import "net/http"
 import "github.com/google/uuid"
 import "encoding/json"
+import "internal/auth"
 
 type webhookParams struct {
 	Event string `json:"event"`
@@ -13,9 +14,20 @@ type webhookParams struct {
 }
 
 func (cfg *apiConfig) handlerWebhooks(w http.ResponseWriter, r *http.Request) {
+	key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Error getting api key")
+		return
+	}
+
+	if key != cfg.Polka {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := webhookParams{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 500, "Error decoding webhook")
 		return
