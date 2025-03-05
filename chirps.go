@@ -77,7 +77,20 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
-	chirps, err := cfg.Db.GetChirps(context.Background())
+	s := r.URL.Query().Get("author_id")
+	var chirps []database.Chirp
+	var err error
+	if s != "" {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			respondWithError(w, 500, "Error parsing id")
+			return
+		}
+		chirps, err = cfg.Db.GetChirpsByUser(context.Background(), id)
+	} else {
+		chirps, err = cfg.Db.GetChirps(context.Background())
+	}
+
 	if err != nil {
 		respondWithError(w, 500, "Error getting chirps")
 		return
@@ -93,7 +106,6 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 			UserID: c.UserID,
 		}
 	}
-
 
 	respondWithJson(w, http.StatusOK, response)
 }
