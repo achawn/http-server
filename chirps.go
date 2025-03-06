@@ -7,6 +7,7 @@ import "net/http"
 import "context"
 import "internal/database"
 import "internal/auth"
+import "slices"
 
 type Chirp struct {
 	ID uuid.UUID `json:"id"`
@@ -76,12 +77,31 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 }
 
+type Sort string
+const (
+	SortAsc Sort = "asc"
+	SortDesc Sort = "desc"
+)
+
+func getSort(s string) Sort {
+	switch s {
+	case string(SortAsc):
+		return SortAsc
+	case string(SortDesc):
+		return SortDesc
+	default:
+		return SortAsc
+	}
+}
+
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
-	s := r.URL.Query().Get("author_id")
+	a_id := r.URL.Query().Get("author_id")
+	s := r.URL.Query().Get("sort")
+	sort := getSort(s)
 	var chirps []database.Chirp
 	var err error
-	if s != "" {
-		id, err := uuid.Parse(s)
+	if a_id != "" {
+		id, err := uuid.Parse(a_id)
 		if err != nil {
 			respondWithError(w, 500, "Error parsing id")
 			return
@@ -105,6 +125,10 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 			Body: c.Body,
 			UserID: c.UserID,
 		}
+	}
+
+	if sort == "desc" {
+		slices.Reverse(response)
 	}
 
 	respondWithJson(w, http.StatusOK, response)
